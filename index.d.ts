@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as expressCore from "express-serve-static-core";
 import * as events from 'events';
 
-declare function feathers(): feathers.Application;
+declare function feathers<ServiceList>(): feathers.Application<ServiceList>;
 
 declare namespace feathers {
   export var static: typeof express.static;
@@ -61,7 +61,7 @@ declare namespace feathers {
     /**
      * Initialize your service with any special configuration or if connecting services that are very tightly coupled
      */
-    setup?(app?: Application, path?: string): void;
+    setup?(app?: Application<any>, path?: string): void;
 
     before(any?: any): this;
     after(any?: any): this;
@@ -73,10 +73,11 @@ declare namespace feathers {
     (location: string, service: Service<any>): T
   }
 
-  interface Application extends express.Application {
+  interface Application<ServiceList> extends express.Application {
     /**
      * It either returns the Feathers wrapped service object for the given path
      */
+    service<T>(fn: (services: ServiceList) => Service<T>): Service<T>;
     service<T>(location: string): Service<T>;
 
     /**

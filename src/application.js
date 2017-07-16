@@ -24,7 +24,9 @@ export default {
     location = stripSlashes(location);
 
     if (!service) {
-      const current = this.services[location];
+      const current = (typeof location === 'function')
+        ? location(this.services)
+        : this.services[location];
 
       if (typeof current === 'undefined' && typeof this.defaultService === 'function') {
         return this.service(location, this.defaultService(location), options);
@@ -86,7 +88,7 @@ export default {
     }
 
     // Any arguments left over are other middleware that we want to pass to the providers
-    this.service(location, service, { middleware });
+    this.service(location, service, {middleware});
 
     return this;
   },
