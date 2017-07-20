@@ -37,8 +37,9 @@ declare namespace feathers {
     /**
      * Creates a new resource with data.
      */
-    create?(data: T | T[], params?: Params, callback?: any): Promise<T | T[]>;
-
+    create?(data: T[], params?: Params, callback?: any): Promise<T[]>;
+    create?(data: T , params?: Params, callback?: any): Promise<T>;
+    
     /**
      * Replaces the resource identified by id with data.
      * Update multiples resources with id equal `null`
@@ -93,6 +94,11 @@ declare namespace feathers {
      * Register a service object
      */
     use: FeathersUseHandler<this>;
+
+    /**
+     * Runs a callback function with the application as the context (this). It can be used to initialize plugins or services.
+     */
+    configure(callback: any): this;
   }
 }
 
