@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as expressCore from 'express-serve-static-core';
 import * as events from 'events';
 
-declare function feathers<ServiceList>(): feathers.Application<ServiceList>;
+declare function feathers<ServiceListInterface = {}>(): feathers.Application<ServiceListInterface>;
 
 declare namespace feathers {
   export var static: typeof express.static;
@@ -15,10 +15,10 @@ declare namespace feathers {
   }
 
   interface Pagination <T> {
-    total: Number,
-    limit: Number,
-    skip: Number,
-    data: T[]
+    total: Number;
+    limit: Number;
+    skip: Number;
+    data: T[];
   }
 
   interface GetService<T> {
@@ -69,7 +69,9 @@ declare namespace feathers {
     remove(id: NullableId, params?: Params, callback?: any): Promise<T>;
   }
 
-  interface OptionalServiceMethods <T> {
+  interface FullService<T> extends GetService<T>, FindService<T>, CreateService<T>, UpdateService<T>, PatchService<T>, RemoveService<T> {}
+
+  interface OptionalMethods <T> {
     find?(params?: Params, callback?: any): Promise<T[] | Pagination<T>>;
     get?(id: number | string, params?: Params, callback?: any): Promise<T>;
     create?(data: T[], params?: Params, callback?: any): Promise<T[]>;
@@ -79,45 +81,43 @@ declare namespace feathers {
     remove?(id: NullableId, params?: Params, callback?: any): Promise<T>;
   }
 
-  interface ServiceCore<T> extends OptionalServiceMethods<T> {
+  interface Setup {
     setup?(app?: Application<any>, path?: string): void;
   }
+
+  interface ServiceDefinition<T> extends OptionalMethods<T>, Setup {}
 
   interface ServiceAddons extends events.EventEmitter {
     filter(any?: any): this;
   }
 
-  interface PartialServiceCore<T> extends OptionalServiceMethods<T>{}
-  interface FullServiceCore<T> extends GetService<T>, FindService<T>, CreateService<T>, UpdateService<T>, PatchService<T>, RemoveService<T> {}
-
-  type FullOrPartialServiceCore<T> = FullServiceCore<T> | PartialServiceCore<T>;
-  type Service<T> = FullOrPartialServiceCore<T> & ServiceAddons;
+  interface Service<T> extends OptionalMethods<T>, ServiceAddons {}
 
   interface FeathersUseHandler<T> extends expressCore.IRouterHandler<T>, express.IRouterMatcher<T> {
-    (location: string, service: Service<any>): T
+    (location: string, service: ServiceDefinition<any>): T;
   }
 
-  interface Application<ServiceList> extends express.Application {
+  interface Application<ServiceListInterface> extends express.Application {
+    /**
+     * Register a service object
+     */
+    use: FeathersUseHandler<this>;
+
     /**
      * It either returns the Feathers wrapped service object for the given path
      */
+    service<T>(fn: (services: ServiceListInterface) => T): T & ServiceAddons;
     service<T>(location: string): Service<T>;
 
     /**
      * Registers a new service for that path and returns the wrapped service object
      */
-    service<T>(fn: (services: ServiceList) => T): T & ServiceAddons;
     service<T>(location: string, service: Service<T>, options?: any): Service<T>;
 
     /**
      *  Initialize all services by calling each services .setup(app, path) method (if available)
      */
     setup(): this;
-
-    /**
-     * Register a service object
-     */
-    use: FeathersUseHandler<this>;
 
     /**
      * Runs a callback function with the application as the context (this). It can be used to initialize plugins or services.
